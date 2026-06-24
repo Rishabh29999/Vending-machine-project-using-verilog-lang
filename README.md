@@ -1,5 +1,89 @@
 # Vending-machine-project-using-verilog-lang
 In this i try to show how vending machine works and i try to test my knowledge in verilog by writing the code..
+verilog code
+`timescale 1ns / 1ps
+
+module vending_machine (
+    input clk,
+    input reset,
+    input cancel,
+    input [1:0] coin,   // 2'b01 = 5 Rupees, 2'b10 = 10 Rupees
+    input [1:0] sel,    // 2'b00 = Prod A (5/-), 2'b01 = Prod B (10/-), 2'b10 = Prod C (15/-)
+    output reg PrA,
+    output reg PrB,
+    output reg PrC,
+    output reg charge
+);
+    
+         
+    parameter S0  = 3'b000;
+    parameter S5  = 3'b001;
+    parameter S10 = 3'b010;
+    parameter S15 = 3'b011;
+    parameter S20 = 3'b100;
+
+    reg [2:0] current_state, next_state;
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) current_state <= S0;
+        else       current_state <= next_state;
+    end
+
+ 
+    always @(*) begin
+        case (current_state)
+            S0:  if (coin == 2'b01) next_state = S5;
+                 else if (coin == 2'b10) next_state = S10;
+                 else next_state = S0;
+
+            S5:  if (coin == 2'b01) next_state = S10;
+                 else if (coin == 2'b10) next_state = S15;
+                 else if (cancel) next_state = S0;
+                 else next_state = S5;
+
+            S10: if (coin == 2'b01) next_state = S15;
+                 else if (coin == 2'b10) next_state = S20;
+                 else if (cancel) next_state = S0;
+                 else next_state = S10;
+
+            S15: if (coin == 2'b01) next_state = S20;
+                 else if (cancel) next_state = S0;
+                 else next_state = S15;
+
+            S20: if (cancel) next_state = S0;
+                 else next_state = S20;
+
+            default: next_state = S0;
+        endcase
+    end
+
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            PrA <= 0; PrB <= 0; PrC <= 0; charge <= 0;
+        end else begin
+            PrA <= 0; PrB <= 0; PrC <= 0; charge <= 0;
+
+            case (current_state)
+                S5:  if (sel == 2'b00) PrA <= 1;
+                S10: if (sel == 2'b00) begin PrA <= 1; charge <= 1; end
+                     else if (sel == 2'b01) PrB <= 1;
+                S15: if (sel == 2'b01) begin PrB <= 1; charge <= 1; end
+                S20: if (sel == 2'b00) begin PrA <= 1; charge <= 1; end
+                     else if (sel == 2'b01) begin PrB <= 1; charge <= 1; end
+                     else if (sel == 2'b10) PrC <= 1;
+            endcase
+
+            if (cancel) charge <= 1;
+        end
+    end
+
+endmodule
+
+
+
+
+
 test bench 
 
 
